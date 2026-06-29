@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from lesson_routers import lesson_routers as lesson_routers_list
+
 SECTION_DEFINITIONS = [
     {
         "slug": "foundations",
@@ -675,27 +677,13 @@ def read_catalog():
 
 
 routers.append(global_router)
+routers.extend(lesson_routers_list)
 
-
-def _build_lesson_handler(section_slug: str, section_title: str, lesson: dict):
-    def lesson_handler():
-        return {
-            "section": section_title,
-            "section_path": f"/{section_slug}",
-            "lesson": lesson["title"],
-            "lesson_path": f"/{section_slug}/{lesson['slug']}",
-            "reference_url": lesson["url"],
-        }
-
-    lesson_handler.__name__ = f"{section_slug}_{lesson['slug']}_handler"
-    return lesson_handler
-
-
-for section in SECTION_DEFINITIONS:
+def build_section_router(section: dict) -> APIRouter:
     router = APIRouter(prefix=f"/{section['slug']}", tags=[section["title"]])
 
     @router.get("/")
-    def read_section(section=section):
+    def read_section():
         return {
             "section": section["title"],
             "section_path": f"/{section['slug']}",
@@ -709,12 +697,8 @@ for section in SECTION_DEFINITIONS:
             ],
         }
 
-    for lesson in section["lessons"]:
-        router.add_api_route(
-            f"/{lesson['slug']}",
-            _build_lesson_handler(section["slug"], section["title"], lesson),
-            methods=["GET"],
-            name=lesson["title"],
-        )
+    return router
 
-    routers.append(router)
+
+for section in SECTION_DEFINITIONS:
+    routers.append(build_section_router(section))
