@@ -4,9 +4,12 @@ https://fastapi.tiangolo.com/tutorial/query-params/
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/user-guide/query-parameters", tags=["Tutorial Básico de FastAPI"])
+router = APIRouter(
+    prefix="/user-guide/query-parameters", tags=["Tutorial Básico de FastAPI"]
+)
 
 # Agrega aquí el código de la lección de FastAPI
+
 
 @router.get("/")
 async def read_lesson():
@@ -16,3 +19,9 @@ async def read_lesson():
         "path": "/user-guide/query-parameters",
         "reference_url": "https://fastapi.tiangolo.com/tutorial/query-params/",
     }
+
+
+# bool: True, 1, yes, on, y, t, true, enabled, active
+@router.get("/bool")
+async def read_query_params_bool(param: bool):
+    return {"param": param}
