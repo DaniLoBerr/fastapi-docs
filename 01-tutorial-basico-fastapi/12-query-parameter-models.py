@@ -2,11 +2,15 @@
 https://fastapi.tiangolo.com/tutorial/query-param-models/
 """
 
-from fastapi import APIRouter
+from typing import Annotated, Literal
 
-router = APIRouter(prefix="/user-guide/query-parameter-models", tags=["Tutorial Básico de FastAPI"])
+from fastapi import APIRouter, Query
+from pydantic import BaseModel, Field
 
-# Agrega aquí el código de la lección de FastAPI
+router = APIRouter(
+    prefix="/user-guide/query-parameter-models", tags=["Tutorial Básico de FastAPI"]
+)
+
 
 @router.get("/")
 async def read_lesson():
@@ -16,3 +20,17 @@ async def read_lesson():
         "path": "/user-guide/query-parameter-models",
         "reference_url": "https://fastapi.tiangolo.com/tutorial/query-param-models/",
     }
+
+
+class FilterParams(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    limit: int = Field(100, gt=0, le=100)
+    offset: int = Field(0, ge=0)
+    order_by: Literal["created_at", "updated_at"] = "created_at"
+    tags: list[str] = []
+
+
+@router.get("/query-parameter-models")
+async def query_parameter_models(filter_query: Annotated[FilterParams, Query()]):
+    return filter_query
