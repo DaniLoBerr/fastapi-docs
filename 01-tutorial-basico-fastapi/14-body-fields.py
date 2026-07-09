@@ -2,11 +2,15 @@
 https://fastapi.tiangolo.com/tutorial/body-fields/
 """
 
-from fastapi import APIRouter
+from typing import Annotated
 
-router = APIRouter(prefix="/user-guide/body-fields", tags=["Tutorial Básico de FastAPI"])
+from fastapi import APIRouter, Body
+from pydantic import BaseModel, Field
 
-# Agrega aquí el código de la lección de FastAPI
+router = APIRouter(
+    prefix="/user-guide/body-fields", tags=["Tutorial Básico de FastAPI"]
+)
+
 
 @router.get("/")
 async def read_lesson():
@@ -16,3 +20,22 @@ async def read_lesson():
         "path": "/user-guide/body-fields",
         "reference_url": "https://fastapi.tiangolo.com/tutorial/body-fields/",
     }
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = Field(
+        default=None,
+        max_length=300,
+        title="The description ot the item",
+    )
+    price: float = Field(
+        description="The price must be greater than zero",
+        gt=0,
+    )
+    tax: float | None = None
+
+
+@router.put("/body-fields/{item_id}")
+async def body_fields(item_id: int, item: Annotated[Item, Body(embed=True)]):
+    return {"item_id": item_id, "item": item}
