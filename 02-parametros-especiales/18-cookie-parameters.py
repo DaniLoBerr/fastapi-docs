@@ -2,11 +2,15 @@
 https://fastapi.tiangolo.com/tutorial/cookie-params/
 """
 
-from fastapi import APIRouter
+from typing import Annotated
 
-router = APIRouter(prefix="/special-params/cookie-parameters", tags=["Parámetros especiales, modelos en capas y respuestas"])
+from fastapi import APIRouter, Cookie
 
-# Agrega aquí el código de la lección de FastAPI
+router = APIRouter(
+    prefix="/special-params/cookie-parameters",
+    tags=["Parámetros especiales, modelos en capas y respuestas"],
+)
+
 
 @router.get("/")
 async def read_lesson():
@@ -16,3 +20,22 @@ async def read_lesson():
         "path": "/special-params/cookie-parameters",
         "reference_url": "https://fastapi.tiangolo.com/tutorial/cookie-params/",
     }
+
+
+# COOKIE PARAMETERS
+@router.get("/cookie-params")
+async def cookie_params(ads_id: Annotated[str | None, Cookie()] = None):
+    return {"ads_id": ads_id}
+
+
+"""No se puede ejecutar el código en Swagger UI:
+
+la interfaz de documentación interactiva (la UI en /docs) usa JavaScript
+en el navegador para hacer las peticiones desde la página,
+y por diseño los navegadores gestionan las cookies de forma limitada y
+"silenciosa", de modo que esa UI no puede poner o enviar cookies
+arbitrarias que hayas escrito en los campos de la documentación;
+por eso aunque rellenes el formulario y pulses "Execute" la cookie no
+llegará al servidor y la petición fallará como si no hubieras enviado
+nada.
+"""
