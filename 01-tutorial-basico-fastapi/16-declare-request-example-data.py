@@ -143,7 +143,7 @@ async def openapi_examples(
                     "description": "This example is loaded from an external URL.",
                     "externalValue": "https://example.com/examples/item.json",
                 },
-            }
+            }  # type: ignore
         ),
     ],
 ):
