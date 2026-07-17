@@ -1,150 +1,92 @@
-# Parte 0 - Foundations
+# Resumen de fundamentos de Python, async y entorno en FastAPI
 
-## Capítulo 1 - Python Types Intro
+Este README resume las primeras lecciones del tutorial de FastAPI sobre tipos de Python, concurrencia `async/await`, variables de entorno y entornos virtuales.
 
-FastAPI se apoya en las anotaciones de tipos estándar de Python para validar datos, convertir valores automáticamente y generar documentación de la API.
+## 1. Tipos de Python y FastAPI
 
-La lección explica que los **type hints** de Python permiten indicar el tipo esperado de variables, parámetros y valores de retorno, como `str`, `int` o `bool`. Aunque Python no obliga a cumplirlos en tiempo de ejecución, estas anotaciones ayudan al editor, a los analizadores estáticos y a FastAPI a entender mejor el código.
+FastAPI se apoya fuertemente en las anotaciones de tipo de Python para darte validación, conversión automática de datos y documentación OpenAPI, además de mejor autocompletado en el editor.
 
-### Tipos básicos
+Puntos clave:
 
-Se muestran ejemplos con tipos simples como `str`, `int`, `float`, `bool` y `bytes`. Al declarar una función con estos tipos, el editor puede ofrecer autocompletado y detectar posibles errores antes de ejecutar el programa.
+- Las anotaciones de tipo (`name: str`, `age: int`, etc.) no cambian el comportamiento en tiempo de ejecución, pero ayudan al editor a detectar errores y ofrecer autocompletado.
+- Puedes tipar tipos simples (`int`, `float`, `bool`, `bytes`) y tipos genéricos como `list[str]`, `tuple[int, int]`, `set[bytes]`, `dict[str, float]` para describir mejor tus estructuras.
+- Las uniones (`int | str`) y los tipos opcionales (`str | None`) expresan parámetros que aceptan múltiples tipos o pueden ser `None`, y el editor puede avisarte si olvidas tratarlos.
+- Los modelos de Pydantic (`class User(BaseModel): ...`) combinan tipos + validación/conversión; FastAPI los usa para validar automáticamente el cuerpo de las peticiones y generar la documentación.
 
-### Tipos compuestos
+En resumen: define siempre tipos en parámetros, respuestas y modelos; FastAPI hace el trabajo pesado de validación y documentación por ti.
 
-La lección introduce contenedores tipados como `list[str]`, `tuple[int, int, str]`, `set[bytes]` y `dict[str, float]`. Esto permite describir no solo el tipo del contenedor, sino también el de sus elementos internos.
+## 2. Concurrencia y async/await
 
-### Union y valores opcionales
+FastAPI aprovecha el modelo asíncrono de Python para maximizar el rendimiento al manejar muchas peticiones I/O-bound (bases de datos, llamadas HTTP, etc.).
 
-También se explica cómo indicar que un valor puede tener más de un tipo, por ejemplo `int | str`. Para valores opcionales se usa `str | None`, lo que deja claro que una variable puede no tener contenido.
+Reglas prácticas:
 
-### Clases y Pydantic
+- Si llamas a librerías **asíncronas** (que requieren `await`), tu función de path debe ser `async def`, y dentro usarás `await` para las operaciones I/O.
+- Si usas librerías **bloqueantes** (no soportan `await`), define la función del path como `def` normal; FastAPI la ejecutará en un threadpool para no bloquear el servidor.
+- Puedes mezclar `def` y `async def` en diferentes endpoints y dependencias; FastAPI se encarga de integrarlo de forma eficiente.
+- La regla general del tutorial: *si sabes que necesitas `await`, usa `async def`; si no estás seguro, empieza con `def`*.
 
-La página muestra que las clases también pueden usarse como tipos, por ejemplo para indicar que un parámetro es una instancia de una clase concreta. Además, presenta modelos de Pydantic con `BaseModel`, donde los atributos tipados permiten validar y transformar datos automáticamente, algo central en FastAPI.
+La idea es que mientras una petición espera I/O, el servidor puede seguir atendiendo otras, lo que da un rendimiento muy alto especialmente bajo carga.
 
-### Annotated
+## 3. Variables de entorno
 
-Por último, se menciona `Annotated`, una forma de adjuntar metadatos a un tipo sin cambiar el tipo principal. FastAPI puede aprovechar esa metadata para añadir validaciones o configuraciones extra sobre parámetros y datos.
+Las variables de entorno permiten configurar tu aplicación sin hardcodear datos sensibles o específicos del entorno (desarrollo, staging, producción) en el código.
 
-## Capítulo 2 - Concurrency and async / await
+Conceptos clave:
 
-La lección explica cuándo usar `async def` y cuándo usar `def` en FastAPI, además de la diferencia entre concurrencia y paralelismo.
+- Una variable de entorno se define en el sistema operativo (por ejemplo, `export MY_NAME="Wade Wilson"` en Linux/macOS o `$Env:MY_NAME = "Wade Wilson"` en PowerShell).
+- Desde Python las lees con `os.getenv("NOMBRE", "valor_por_defecto")`; todo lo que viene de entorno es `str`, así que cualquier conversión la haces tú o la delegas a una clase de settings.
+- Es habitual usar variables de entorno para: claves API, cadenas de conexión a BD, flags de entorno (`ENV=dev|prod`), URLs de servicios externos, etc.
+- La variable especial `PATH` define dónde busca el sistema los ejecutables (incluido `python`), y se ve afectada por cómo instalas Python y cómo activas entornos virtuales.
 
-### Regla rápida
+Usar variables de entorno te permite desplegar la misma imagen de aplicación en distintos entornos cambiando solo la configuración externa.
 
-- Usa `async def` si trabajas con librerías que se llaman con `await`.
-- Usa `def` si la librería que usas hace I/O pero no soporta `await`.
-- Si no tienes claro cuál usar, la documentación recomienda usar `def` normal.
-- Puedes mezclar `def` y `async def` en la misma aplicación, y FastAPI gestionará ambos casos correctamente.
+## 4. Entornos virtuales (`venv`)
 
-### Qué significa código asíncrono
+Un entorno virtual es una instalación aislada de Python (y sus paquetes) dentro de una carpeta de tu proyecto, de forma que cada proyecto tiene sus propias dependencias sin interferir con otros.
 
-El código asíncrono permite que el servidor no se quede bloqueado mientras espera operaciones lentas de I/O, como consultas a base de datos, llamadas a APIs externas, lectura de archivos o comunicación por red.
-Mientras una tarea espera, el servidor puede atender otras peticiones.
+Flujo típico:
 
-### Concurrencia vs paralelismo
+1. **Crear el entorno virtual** dentro del proyecto:
 
-La documentación usa el ejemplo de las hamburguesas para explicar que la concurrencia es útil cuando hay mucho tiempo de espera, como ocurre en la mayoría de aplicaciones web.
-En cambio, el paralelismo es más útil cuando el trabajo es principalmente de CPU, por ejemplo procesamiento de imágenes, audio o tareas de machine learning.
+   ```bash
+   python -m venv .venv
+   ```
 
-### Cómo funcionan `async` y `await`
+   Esto crea la carpeta `.venv/` con un intérprete de Python y `pip` independientes.
 
-- `await` se usa para esperar el resultado de una operación asíncrona sin bloquear el servidor.
-- `await` solo puede usarse dentro de una función definida con `async def`.
-- Una función `async def` devuelve una coroutine, que puede pausarse y reanudarse durante su ejecución.
+2. **Activar el entorno**:
 
-### Qué hace FastAPI internamente
+   - Linux/macOS:
 
-Si defines una ruta con `def` en vez de `async def`, FastAPI la ejecuta en un thread pool externo para evitar bloquear el servidor principal.
-Ese mismo comportamiento también aplica a las dependencias y subdependencias definidas con `def`.
+     ```bash
+     source .venv/bin/activate
+     ```
 
-### Recomendación práctica
+   - Windows PowerShell:
 
-- Para operaciones de I/O no bloqueantes, usa `async def`.
-- Para código bloqueante o librerías sin soporte async, usa `def`.
-- Para tareas intensivas de CPU, piensa además en paralelismo o multiprocesamiento, no solo en async.
+     ```powershell
+     .venv\Scripts\Activate.ps1
+     ```
 
-### Idea final
+   Al activar, se modifica `PATH` para que `python` y `pip` apunten al entorno virtual.
 
-FastAPI aprovecha el modelo asíncrono de Python para ofrecer muy buen rendimiento en APIs web, especialmente en escenarios con mucha espera por I/O.
+3. **Actualizar `pip` e instalar dependencias** (como FastAPI):
 
-## Capítulo 3 - Environment Variables
+   ```bash
+   python -m pip install --upgrade pip
+   pip install "fastapi[standard]"
+   ```
 
-### Qué son
+   Estas dependencias se instalan solo en ese proyecto.
 
-Las variables de entorno son valores que existen fuera del código Python, en el sistema operativo, y que la aplicación puede leer al ejecutarse.
+4. **Ignorar `.venv` en el control de versiones** y compartir solo `requirements.txt` o `pyproject.toml`, para que otros puedan recrear el entorno.
 
-### Para qué sirven
+Beneficios: evitas conflictos de versiones entre proyectos, facilitas reproducibilidad (incluyendo CI/CD) y mantienes limpio el Python global.
 
-Se usan para guardar configuración, como claves, rutas o ajustes, sin escribir esos datos directamente en el código.
+## 5. Cómo encaja todo en tu flujo de trabajo
 
-### Cómo se crean
-
-En Unix/Linux/macOS se pueden definir con:
-
-```bash
-export MY_NAME="Wade Wilson"
-```
-
-En PowerShell se pueden definir con:
-
-```powershell
-$Env:MY_NAME = "Wade Wilson"
-```
-
-### Cómo leerlas en Python
-
-Se leen con el módulo `os`:
-
-```python
-import os
-
-name = os.getenv("MY_NAME", "World")
-print(f"Hello {name}")
-```
-
-### Valor por defecto
-
-Si la variable no existe, `os.getenv()` puede devolver un valor por defecto en lugar de `None`.
-
-### Uso temporal
-
-También se puede definir una variable solo para una ejecución concreta:
-
-```bash
-MY_NAME="Wade Wilson" python main.py
-```
-
-### Importante
-
-Todas las variables de entorno se leen como texto (`string`), así que si necesitas enteros, booleanos u otros tipos, debes convertirlos en Python.
-
-### PATH
-
-`PATH` es una variable de entorno especial que guarda las carpetas donde el sistema busca programas ejecutables como `python`.
-
-## Capítulo 4: Virtual Environments
-
-### Qué es un entorno virtual
-
-- Es una carpeta que contiene su propio intérprete de Python y sus dependencias instaladas de forma aislada.
-- Permite separar las librerías de un proyecto de las del sistema o de otros proyectos.
-
-### Por qué usarlo
-
-- Evita conflictos de versiones entre proyectos distintos.
-- Hace más fácil mantener un entorno limpio y reproducible para desarrollar con FastAPI.
-
-### Cómo crearlo
-
-- Se usa el módulo integrado `venv` de Python con un comando como `python -m venv .venv`.
-- Normalmente se recomienda crear el entorno dentro del proyecto con el nombre `.venv`.
-
-### Cómo activarlo
-
-- En Linux y macOS, suele activarse con `source .venv/bin/activate`.
-- En Windows, suele activarse con `.venv\Scripts\activate`.
-
-### Idea clave
-
-- Una vez activado el entorno virtual, los comandos de `python` y `pip` trabajan dentro de ese entorno, no sobre la instalación global del sistema.
+- **Tipos de Python + Pydantic** → describes tus datos una sola vez y obtienes validación, conversión y documentación automática en FastAPI.
+- **Concurrencia con `async/await`** → eliges `async def` cuando consumes librerías asíncronas y `def` cuando usas librerías bloqueantes, manteniendo el servidor eficiente.
+- **Variables de entorno** → mantienes la configuración sensible y dependiente del entorno fuera del código, lo que facilita despliegues en distintos entornos.
+- **Entornos virtuales** → cada proyecto FastAPI tiene su propio Python y dependencias, evitando el "dependency hell" y asegurando entornos reproducibles.
