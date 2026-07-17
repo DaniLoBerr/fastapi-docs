@@ -18,7 +18,41 @@ En esencia: defines funciones de Python con type hints, y FastAPI se encarga de 
   app = FastAPI()
   ```
 
-  y defines endpoints con decoradores como `@app.get("/")` o `@app.post("/items/")`.  
+- Defines un endpoint con un decorador y una función:
+
+  ```python
+  @app.get("/")
+  async def root():
+      return {"message": "Hello World"}
+  ```
+
+- La función bajo el decorador es la "path operation function"; FastAPI la ejecuta cuando recibe una petición para esa ruta y método HTTP.
+- Puedes ejecutar el servidor en local con:
+
+  ```bash
+  uvicorn main:app --reload
+  ```
+
+  o con la CLI de FastAPI:
+
+  ```bash
+  fastapi dev
+  ```
+
+- Visita `http://127.0.0.1:8000` y verás el JSON `{"message": "Hello World"}`.
+- La documentación interactiva se muestra automáticamente en `/docs` (Swagger UI) y `/redoc`.
+- El esquema OpenAPI generado está disponible en `/openapi.json`.
+- Puedes configurar el entrypoint en `pyproject.toml` con:
+
+  ```toml
+  [tool.fastapi]
+  entrypoint = "main:app"
+  ```
+
+  para que `fastapi dev` y otras herramientas (VS Code, FastAPI Cloud) encuentren tu aplicación sin tener que pasar la ruta manualmente.
+
+- `fastapi deploy` es una opción adicional si quieres desplegar la app rápidamente a FastAPI Cloud.
+
 - Los parámetros de la función se convierten en partes de la API:
   - Si están en la ruta, son **path params**.
   - Si no están en la ruta ni son modelos, por defecto son **query params**.
@@ -100,6 +134,8 @@ Puedes declarar ejemplos de varias formas:
 
 - En el modelo (a través de la configuración o `Field`).
 - En el endpoint, usando `example` o `examples` en `Body` y otros helpers.
+
+En la lección se destaca un detalle técnico importante: FastAPI 0.99+ usa OpenAPI 3.1.0 y JSON Schema 2020-12, lo que permite que los ejemplos declarados en Pydantic y en los parámetros de request se integren de forma más consistente. También existe el parámetro `openapi_examples` para declarar múltiples ejemplos con metadatos adicionales en la documentación.
 
 Estos ejemplos se muestran en Swagger UI como payload de muestra, lo que ayuda a otros (frontend, QA, etc.) a entender cómo consumir la API.
 
