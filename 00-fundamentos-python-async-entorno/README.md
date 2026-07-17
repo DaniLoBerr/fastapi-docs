@@ -1,4 +1,4 @@
-# Part 0 - Foundations
+# Parte 0 - Foundations
 
 ## Capítulo 1 - Python Types Intro
 
@@ -68,7 +68,7 @@ Ese mismo comportamiento también aplica a las dependencias y subdependencias de
 
 FastAPI aprovecha el modelo asíncrono de Python para ofrecer muy buen rendimiento en APIs web, especialmente en escenarios con mucha espera por I/O.
 
-## Environment Variables
+## Capítulo 3 - Environment Variables
 
 ### Qué son
 
@@ -123,7 +123,7 @@ Todas las variables de entorno se leen como texto (`string`), así que si necesi
 
 `PATH` es una variable de entorno especial que guarda las carpetas donde el sistema busca programas ejecutables como `python`.
 
-## Virtual Environments
+## Capítulo 4: Virtual Environments
 
 ### Qué es un entorno virtual
 
