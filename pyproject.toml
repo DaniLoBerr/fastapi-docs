@@ -8,3 +8,19 @@ dependencies = [
     "fastapi[standard]>=0.138.0",
     "ruff>=0.15.20",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "N", "UP", "SIM", "RUF", "ANN", "ASYNC", "S"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
