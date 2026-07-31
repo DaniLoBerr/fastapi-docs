@@ -1,115 +1,163 @@
-# Resumen Parte 3 - Special params
+# Resumen de Parámetros Especiales, Modelos en Capas y Respuestas
+
+Este README resume las lecciones de esta carpeta sobre `Cookie`, `Header`, modelos de cookies y cabeceras, modelos de respuesta, uso de `response_model` y configuración de `status_code`.
 
 ---
 
-## Parámetros de Cookie
+## 1. Cookie Parameters
 
-### Idea general
+- `Cookie` permite leer cookies de la petición HTTP igual que `Query` y `Path` permiten leer otros parámetros.
+- Si no usas `Cookie`, FastAPI interpreta el parámetro como query param.
+- Se puede usar con `Annotated[...]` o con la forma clásica `param = Cookie(default=...)`.
+- El navegador y la UI de `/docs` no hacen fácil enviar cookies arbitrarias desde la documentación interactiva, así que aunque rellenes el formulario, la cookie puede no llegar como esperas.
 
-La lección muestra cómo leer cookies de las peticiones HTTP en FastAPI usando el tipo especial `Cookie`, siguiendo el mismo patrón que `Query` y `Path` para parámetros de consulta y de ruta.
+### Idea rápida
 
-### Importar `Cookie`
-
-Para empezar, se importa `Cookie` y se define la aplicación:
-
-```python
-from typing import Annotated
-from fastapi import Cookie, FastAPI
-
-app = FastAPI()
-```
-
-También se muestra la forma alternativa sin `Annotated`:
-
-```python
-from fastapi import Cookie, FastAPI
-
-app = FastAPI()
-
-@app.get("/items/")
-async def read_items(ads_id: str | None = Cookie(default=None)):
-    return {"ads_id": ads_id}
-```
-
-En ambos casos, `ads_id` se lee desde una cookie llamada `ads_id` enviada por el cliente.
-
-### Declarar parámetros de cookie
-
-Los parámetros de cookie se declaran igual que los de `Path` y `Query`, y admiten valores por defecto, tipos y validación extra.
-
-Ejemplo con `Annotated`:
-
-```python
-@app.get("/items/")
-async def read_items(
-    ads_id: Annotated[str | None, Cookie()] = None
-):
-    return {"ads_id": ads_id}
-```
-
-`Cookie` es un “pariente” de `Query` y `Path`, heredando del mismo tipo base `Param`, así que comparte su comportamiento de anotación y validación.
-
-### Nota importante
-
-Para que FastAPI trate un parámetro como cookie, es obligatorio usar `Cookie`; si no, el parámetro se interpretará como parámetro de query de forma automática.
-
-### Resumen
-
-- Se usan cookies como otra fuente de parámetros de entrada del cliente.
-- Se declaran con `Cookie`, con el mismo patrón que `Query` y `Path`.
-- Se pueden usar tanto con `Annotated[...]` como con la forma clásica `param = Cookie(default=...)`.
+Usa `Cookie()` cuando el dato venga almacenado en una cookie del cliente.
 
 ---
 
-## Parámetros de Header en FastAPI
+## 2. Header Parameters
 
-La lección trata sobre cómo leer parámetros de cabecera HTTP en FastAPI usando el tipo especial `Header`, de forma muy similar a `Query`, `Path` y `Cookie`.
+- `Header` sirve para leer cabeceras HTTP de forma declarativa.
+- Funciona con el mismo patrón que `Query`, `Path` y `Cookie`.
+- FastAPI convierte automáticamente los nombres de parámetros con guiones bajos a nombres de header con guiones.
+  - `user_agent` se busca como `User-Agent`
+- Si necesitas desactivar esa conversión, puedes usar `convert_underscores=False`.
+- Si una cabecera puede repetirse varias veces, puedes declararla como `list[str]` para recibir todos sus valores.
 
-### Declarar parámetros de header
+### Idea rápida
 
-- Importa `Header` y úsalo junto con `Annotated` para el parámetro de la función de ruta.  
-- Al usar `Header(...)` en el valor por defecto, FastAPI entiende que ese parámetro se obtiene de los headers de la petición.  
-- Puedes usar valores por defecto, validaciones, etc., igual que con `Query`, `Path` y `Cookie`, porque `Header` se basa en la misma clase `Param`.
-
-### Conversión de nombres: underscores → hyphens
-
-- Los headers HTTP usan guiones (`user-agent`), mientras que en Python se usan variables con guiones bajos (`user_agent`).  
-- FastAPI convierte automáticamente los guiones bajos del nombre del parámetro en guiones al buscar el header real.  
-- Esta conversión se puede desactivar pasando `convert_underscores=False` a `Header` si necesitas el nombre exacto tal cual.
-
-### Headers con múltiples valores
-
-- Algunos headers pueden aparecer varias veces o contener varios valores.  
-- Para estos casos, puedes declarar el parámetro como `List[str]` (u otra lista) y FastAPI devolverá todos los valores en esa lista en lugar de uno solo.
-
-### Ideas clave
-
-- Usa `Header` para leer valores de encabezados HTTP de forma declarativa, igual que `Query` o `Path`.  
-- Aprovecha la conversión automática de `snake_case` a nombres de header con guiones, salvo que necesites desactivarla con `convert_underscores=False`.
+Usa `Header()` para metadatos de la request como `User-Agent`, tokens o cabeceras personalizadas.
 
 ---
 
-## Modelos de Cookies en FastAPI
+## 3. Cookie Parameter Models
 
-### Idea principal
+- Si varias cookies están relacionadas, puedes agruparlas en un modelo Pydantic.
+- Esto permite reutilizar el mismo modelo en varias rutas.
+- También centraliza validaciones y metadatos.
+- Puedes prohibir cookies extra con `model_config = {"extra": "forbid"}`.
 
-La lección de **Cookie Parameter Models** explica que, si tu aplicación usa varias cookies relacionadas entre sí, puedes agruparlas en un **modelo de Pydantic** en lugar de declararlas una por una como parámetros sueltos.
+### Ventaja principal
 
-### Cómo se hace
+En vez de declarar cookies una a una, defines un modelo y FastAPI construye la instancia validada automáticamente.
 
-- Defines un **modelo Pydantic** con los campos que representan cada cookie (por ejemplo `session_id`, `theme`, etc.).
-- En la función de ruta, anotas un parámetro con ese modelo y lo marcas como `Cookie(...)` (normalmente usando `typing.Annotated`).
-- FastAPI:
-  - Lee las cookies del `Request`
-  - Extrae los valores para cada campo
-  - Construye automáticamente una instancia del modelo que recibes **ya validada**.
+---
 
-### Ventajas y validación extra
+## 4. Header Parameter Models
 
-- Puedes **reutilizar** el mismo modelo en varias rutas que compartan las mismas cookies.
-- Puedes añadir **validaciones** y metadatos a nivel de modelo, igual que con otros modelos de Pydantic.
-- Si quieres rechazar cookies inesperadas, puedes usar la configuración del modelo (`extra = "forbid"`) para **prohibir campos extra**.
+- Igual que con cookies, puedes agrupar cabeceras relacionadas en un modelo Pydantic.
+- FastAPI rellena el modelo a partir de los headers de la petición.
+- Puedes añadir validaciones y campos opcionales.
+- También puedes prohibir cabeceras extra si lo necesitas.
+- Si quieres mantener nombres exactos de cabecera, puedes desactivar la conversión de `snake_case` a `kebab-case`.
 
-### Resumen en una frase
+### Caso práctico
 
-Puedes usar **modelos de Pydantic** para declarar grupos de cookies en FastAPI, reutilizar esa definición en varias rutas y centralizar la validación y las reglas sobre esas cookies.
+Útil cuando varias rutas comparten un conjunto fijo de cabeceras como `host`, `save-data`, `if-modified-since`, `traceparent` o listas tipo `X-Tag`.
+
+---
+
+## 5. Response Model y Return Type
+
+FastAPI usa el tipo de retorno y/o `response_model` para varias cosas:
+
+- validar el dato devuelto
+- generar JSON Schema
+- serializar la respuesta
+- filtrar campos de salida
+
+### `response_model`
+
+- Se usa cuando quieres devolver algo que no coincide exactamente con la anotación de retorno.
+- Es muy útil si devuelves un `dict` pero quieres documentarlo como un modelo Pydantic.
+- `response_model` tiene prioridad sobre la anotación del tipo de retorno.
+- Si tu editor se queja, puedes anotar el retorno como `Any` y dejar que FastAPI use `response_model`.
+- También puedes desactivar el modelo con `response_model=None`.
+
+### Modelos de entrada y salida diferentes
+
+- Es una buena práctica separar modelos según su uso:
+  - uno para entrada
+  - otro para salida
+  - otro para datos persistidos en BD
+- Esto evita devolver campos sensibles como contraseñas.
+
+### Filtrado de salida
+
+FastAPI permite filtrar la respuesta con:
+
+- `response_model_exclude_unset=True`
+- `response_model_exclude_defaults=True`
+- `response_model_exclude_none=True`
+- `response_model_include={...}`
+- `response_model_exclude={...}`
+
+### Resumen mental
+
+Si lo que devuelves no encaja exactamente con el tipo anotado, usa `response_model` para que la documentación y la validación sigan siendo correctas.
+
+---
+
+## 6. Extra Models
+
+- FastAPI anima a evitar duplicación de modelos.
+- Si una entidad tiene “estados” distintos, es mejor crear varios modelos relacionados por herencia.
+
+### Patrón típico con usuarios
+
+- `UserBase`: campos comunes
+- `UserIn`: campos de entrada, como `password`
+- `UserOut`: campos de salida, sin contraseña
+- `UserInDB`: representación en base de datos, con `hashed_password`
+
+### Uniones de modelos
+
+- Puedes usar `Model1 | Model2` o `Union[Model1, Model2]`.
+- Cuando hay modelos parecidos, conviene poner primero el más específico.
+- FastAPI genera el esquema como `anyOf` en OpenAPI.
+
+### Diccionarios arbitrarios
+
+- Si no conoces exactamente la estructura de la salida, puedes tiparla como `dict[str, str]` u otro diccionario genérico.
+- También puedes devolver listas de modelos o combinaciones similares.
+
+### Idea clave
+
+No necesitas un único modelo por entidad. Puedes tener varios modelos para distintas fases del flujo: entrada, persistencia y salida.
+
+---
+
+## 7. Response Status Code
+
+- `status_code` en el decorador de la ruta define el código HTTP de la respuesta.
+- También queda documentado en OpenAPI.
+- Puede ser:
+  - un número, como `201`
+  - un `IntEnum`, como `http.HTTPStatus`
+  - una constante de `fastapi.status`
+
+### Convención útil
+
+- `200` para respuestas normales
+- `201` para creación de recursos
+- `404` para no encontrado
+- `400` para errores del cliente
+- `500` para errores del servidor
+
+### Recomendación práctica
+
+Usar `fastapi.status.HTTP_201_CREATED` mejora la legibilidad y el autocompletado.
+
+---
+
+## Resumen rápido
+
+- `Cookie()` lee cookies.
+- `Header()` lee cabeceras HTTP.
+- Los modelos de cookies y cabeceras centralizan validación y reutilización.
+- `response_model` controla documentación, validación y filtrado de salida.
+- Separa modelos de entrada, salida y persistencia cuando tenga sentido.
+- `status_code` documenta y fija el código HTTP de la respuesta.
+
