@@ -1,18 +1,18 @@
 # Resumen de dudas sobre FastAPI y backend web
 
-Documento vivo para ir acumulando respuestas cortas y claras sobre el tutorial de FastAPI y conceptos generales de desarrollo web. Está escrito para alguien que empieza desde cero, con lenguaje simple, ejemplos cotidianos y alguna metáfora para hacerlo más fácil de entender.
+Documento vivo para ir acumulando respuestas cortas y claras sobre el tutorial de FastAPI y conceptos generales de desarrollo web. Está escrito para alguien que empieza desde cero, con lenguaje simple, algo de precisión técnica y ejemplos cotidianos para que el concepto se entienda sin quedarse corto.
 
 Nota: este resumen está alineado con la documentación oficial consultada el 2 de agosto de 2026.
 
 ## 1. Tipos genéricos vs modelos Pydantic
 
-- Usa un `BaseModel` cuando el dato es como una ficha con varias casillas: nombre, precio, estado, fecha, etc.
-- Usa un tipo simple o genérico (`list[...]`, `dict[...]`, `int`, `str`, `UUID`, `datetime`, `Enum`, etc.) cuando el dato es una lista, un mapa o un valor suelto.
-- FastAPI puede trabajar con ambos en entrada y salida. Lo importante es la forma real del dato.
-- Si por dentro manejas una cosa de una manera, pero hacia fuera quieres mostrar otra más limpia, usa `response_model`.
-- Regla fácil: si parece una ficha de varios campos, piensa en modelo; si parece una lista o una sola pieza, piensa en tipo simple.
+- Usa un `BaseModel` cuando el dato tenga estructura propia, validación y varios campos relacionados.
+- Usa un tipo simple o genérico (`list[...]`, `dict[...]`, `int`, `str`, `UUID`, `datetime`, `Enum`, etc.) cuando el dato sea un valor aislado, una colección o un mapa.
+- FastAPI puede trabajar con ambos en entrada y salida. Lo importante es la forma real del dato y el contrato que quieres exponer.
+- Si por dentro manejas una cosa de una manera, pero hacia fuera quieres mostrar una forma más limpia, usa `response_model` para separar la implementación interna del contrato público.
+- Regla fácil: si parece un esquema de objeto, piensa en modelo; si parece una lista o una sola pieza, piensa en tipo simple.
 
-Piensa en un `BaseModel` como una caja con compartimentos. Un tipo simple es como una caja donde solo guardas una cosa.
+Piensa en un `BaseModel` como una ficha con casillas. Un tipo simple es como una pieza suelta.
 
 Ejemplo útil:
 
@@ -24,22 +24,22 @@ async def read_items() -> list[Item]:
 
 ## 2. Cuándo usar asincronía
 
-- Usa `async def` cuando tu código vaya a esperar algo que está fuera de Python, como una API, una base de datos asíncrona o una cola de mensajes.
+- Usa `async def` cuando tu código vaya a esperar I/O no bloqueante con librerías compatibles con `asyncio`, como una API, una base de datos asíncrona o una cola de mensajes.
 - Usa `def` normal cuando el código o la librería son bloqueantes.
-- FastAPI manda las funciones `def` a un grupo de trabajo aparte para no frenar el resto.
-- No uses `async def` solo porque suena moderno. Si dentro haces llamadas bloqueantes, sigues frenando el programa.
+- FastAPI ejecuta las funciones `def` en un threadpool para no bloquear el event loop.
+- No uses `async def` solo porque suena moderno: si dentro haces llamadas bloqueantes, el beneficio desaparece.
 - Para tareas muy pesadas de cálculo, ni `async` ni `def` bastan por sí solos; suele hacer falta usar procesos, workers o colas.
 
-Idea corta: `async` no sirve para correr más rápido, sirve para no quedarse parado mientras espera.
+Idea corta: `async` no sirve para correr más rápido; sirve para no bloquear mientras espera.
 
 ## 3. Qué es el event loop
 
-- El event loop es el que reparte turnos entre tareas asíncronas.
+- El event loop es el planificador de `asyncio`.
 - Su trabajo es dejar que una tarea se pause cuando hace `await` y seguir con otra mientras espera.
 - Si una tarea está esperando, el loop aprovecha para atender otras.
-- Si metes una operación bloqueante dentro de una corrutina, es como poner un coche en mitad de una calle de un solo carril.
+- Si metes una operación bloqueante dentro de una corrutina, rompes esa ventaja.
 
-Piensa en él como un camarero muy rápido que va pasando por las mesas y atendiendo a quien ya está listo.
+Piensa en él como un coordinador que reparte turnos entre tareas que no están listas al mismo tiempo.
 
 ## 4. Cuándo usar variables de entorno
 
@@ -84,7 +84,7 @@ Piensa en `uv` como una caja de herramientas que monta y mantiene tu espacio de 
 - La petición viaja por HTTP hacia un proxy o balanceador, si existe.
 - Detrás hay un servidor ASGI, como Uvicorn, que ejecuta tu aplicación FastAPI.
 - FastAPI recibe la petición, resuelve dependencias, ejecuta middleware y llama a la función de la ruta.
-- La respuesta se convierte al formato correcto, pasa otra vez por el middleware y vuelve al cliente.
+- La respuesta se serializa según el esquema de salida, pasa otra vez por el middleware y vuelve al cliente.
 
 Esquema mental:
 
@@ -104,7 +104,7 @@ Es como un restaurante: el cliente pide, el camarero lleva el pedido a cocina, c
 - No activa recarga automática y suele escuchar en `0.0.0.0`.
 - En producción normalmente va detrás de un proxy que se encarga de HTTPS y, muchas veces, de repartir tráfico entre varios procesos.
 
-Regla rápida: `dev` es modo práctica; `run` es modo abierto al público.
+Regla rápida: `dev` es para iterar localmente; `run` es para desplegar con el comportamiento previsto en producción.
 
 ## 8. Cuándo usar path parameters y cuándo query parameters
 
@@ -136,17 +136,17 @@ Piensa en un `Enum` como el menú de un restaurante: puedes elegir entre unas po
 
 ## 10. Cuándo enviar datos en body y cuándo en form
 
-- Usa body JSON cuando el cliente envía datos estructurados a una API.
+- Usa body JSON cuando el cliente envía un payload estructurado a una API.
 - En FastAPI, lo normal es usar body en `POST`, `PUT`, `PATCH` y `DELETE`.
-- Usa `Form` cuando el cliente manda datos como formulario HTML o cuando el flujo lo pide, por ejemplo en OAuth2 password flow.
+- Usa `Form` cuando el `Content-Type` sea `application/x-www-form-urlencoded` o `multipart/form-data`, o cuando el flujo lo pida, por ejemplo en OAuth2 password flow.
 - Si hay archivos, normalmente el envío es `multipart/form-data`, así que también entra en la familia de formularios.
 - Un body en `GET` existe en teoría, pero está desaconsejado y suele dar problemas.
 
-Piensa en JSON como una caja bien ordenada con etiquetas. Un formulario es más como rellenar campos en un mostrador.
+Piensa en JSON como una estructura con claves y valores. Un formulario es más como rellenar campos en un mostrador.
 
 ## 11. Cuándo utilizar body fields
 
-- Usa `Field(...)` dentro de un modelo Pydantic para poner reglas y descripción sobre una propiedad concreta.
+- Usa `Field(...)` dentro de un modelo Pydantic para validar y documentar un atributo concreto.
 - Es la opción natural cuando el dato forma parte del esquema del modelo.
 - Úsalo para valores por defecto, `gt`, `ge`, `min_length`, `max_length`, `alias`, `description`, `examples`, `deprecated`, etc.
 - Usa `Body(...)` en la firma de la función cuando el parámetro está en el body, pero no quieres o no puedes meterlo en un `BaseModel`.
@@ -161,7 +161,7 @@ class Item(BaseModel):
     price: float = Field(gt=0)
 ```
 
-Piensa en `Field` como las reglas de una casilla concreta y en `Body` como las reglas del paquete entero.
+Piensa en `Field` como las reglas de una casilla y en `Body` como las reglas del payload entero.
 
 ## 12. Cuándo usar `embed` en `Body`
 
@@ -180,26 +180,26 @@ Piensa en `embed=True` como meter la cosa dentro de una caja con etiqueta, en ve
 
 ## 13. Cuándo recomendar `examples`
 
-- Usa ejemplos cuando el payload es complejo, cuando hay varios equipos consumiendo la API o cuando quieres quitar dudas en Swagger UI.
+- Usa ejemplos cuando el payload es complejo, cuando hay varios equipos consumiendo la API o cuando quieres reducir ambigüedad en Swagger UI.
 - Son muy útiles en modelos anidados, arrays de objetos, enums y payloads con muchas reglas.
 - Si el ejemplo pertenece al esquema del dato, usa `examples` en `Field(...)` o en `model_config = {"json_schema_extra": {"examples": [...]}}`.
 - Si quieres varios ejemplos con nombre y metadatos para la operación, usa `openapi_examples` en `Body`, `Query`, `Path`, `Form`, `File`, etc.
 - Si solo necesitas un ejemplo simple por compatibilidad, existe `example`, pero en FastAPI moderno suele ser mejor pensar primero en `examples` u `openapi_examples`.
 
-Un ejemplo claro funciona como una foto del plato terminado: ayuda a entender el resultado sin tener que imaginarlo.
+Un ejemplo claro funciona como una referencia visual del resultado final.
 
 ## 14. Cuándo usar `include_in_schema`
 
 - Úsalo para ocultar una ruta o un parámetro de la documentación OpenAPI generada.
 - Sirve para rutas internas, experimentales, de transición o para parámetros de depuración que no quieres enseñar.
-- No lo uses como seguridad. Ocultar algo en la documentación no lo protege.
+- No lo uses como seguridad. Ocultar algo en la documentación no lo protege; solo deja de mostrarse en OpenAPI.
 - Si quieres ocultar toda la documentación en un entorno, normalmente es mejor desactivar OpenAPI o las URLs de docs con configuración de la app.
 
 Piensa en ello como quitar una puerta del mapa, no como poner un candado.
 
 ## 15. Cuándo usar `before` y `after` validators
 
-- Usa `before` cuando necesites limpiar o adaptar la entrada antes de que Pydantic la entienda.
+- Usa `before` cuando necesites preprocesar la entrada antes de que Pydantic la convierta a tipos.
 - Sirve para aceptar formatos flexibles, datos viejos o valores sucios que quieras convertir.
 - En validadores de modelo, `mode="before"` sirve para revisar el diccionario crudo antes de construir el modelo.
 - Usa `after` cuando el valor ya está validado y solo quieres comprobar reglas, coherencia o relaciones entre campos.
@@ -209,16 +209,16 @@ Piensa en ello como quitar una puerta del mapa, no como poner un candado.
 
 Regla rápida:
 
-- `before` = limpiar la entrada.
-- `after` = revisar el resultado ya limpio.
+- `before` = limpiar o adaptar la entrada cruda.
+- `after` = validar el resultado ya convertido.
 
-Piensa en ello como lavar ingredientes antes de cocinar y probar la comida al final.
+Piensa en ello como limpiar ingredientes antes de cocinar y comprobar el plato al final.
 
 ## 16. Orden de parámetros y uso de `*`
 
 - Python exige que los parámetros sin valor por defecto vayan antes que los que sí tienen.
 - FastAPI identifica los parámetros por nombre, tipo y marcador (`Query`, `Path`, `Body`, etc.), no solo por el orden.
-- Si necesitas ordenar la firma de forma más flexible sin perder claridad, puedes usar `*` para obligar a pasar parámetros por nombre.
+- Si necesitas ordenar la firma de forma más flexible sin perder claridad, puedes usar `*` para convertir los parámetros siguientes en keyword-only.
 - En FastAPI moderno, `Annotated` reduce bastante la necesidad de trucos con el orden.
 
 Ejemplo:
@@ -228,21 +228,21 @@ async def read_items(*, item_id: int = Path(...), q: str):
     ...
 ```
 
-Piensa en `*` como una señal que dice: "a partir de aquí, di claramente el nombre de cada cosa".
+Piensa en `*` como una señal que obliga a nombrar explícitamente los parámetros que vienen después.
 
 ## 17. Cuándo usar un modelo Pydantic y cuándo un tipo "arbitrario"
 
-- Usa un modelo Pydantic cuando el dato tiene estructura clara, varios campos, validaciones propias y quieres reutilizarlo.
-- Usa un tipo concreto o genérico cuando el payload es naturalmente una lista, un diccionario o un valor simple.
+- Usa un modelo Pydantic cuando quieras describir un esquema reutilizable con validación propia.
+- Usa un tipo concreto o genérico cuando el payload sea naturalmente una lista, un diccionario o un valor simple.
 - Usa `UUID`, `datetime`, `Decimal`, `Enum`, `HttpUrl`, `EmailStr` y tipos parecidos cuando describen mejor el dato que un `str` genérico.
-- Si el objeto no es fácil de convertir a JSON o no tiene una forma clara de esquema, normalmente conviene transformarlo antes de exponerlo por la API.
+- Si el objeto no es fácil de serializar a JSON o no tiene una forma clara de esquema, conviene transformarlo antes de exponerlo por la API.
 - En FastAPI, muchas veces la mejor respuesta es: modelo para la forma pública del recurso; tipos genéricos para colecciones y valores puntuales.
 
 ## 18. Framework, ORM y herramientas de migración
 
-- Un framework web se encarga de la ruta completa de la petición: rutas, dependencias, middleware y respuesta.
+- Un framework web se encarga del ciclo completo de la petición: rutas, dependencias, middleware y respuesta.
 - Un ORM se encarga de traducir objetos de Python a tablas y filas de base de datos, y al revés.
-- Una herramienta de migraciones guarda el historial de cambios de la base de datos y permite aplicarlos o deshacerlos de forma controlada.
+- Una herramienta de migraciones guarda el historial de cambios del esquema de la base de datos y permite aplicarlos o deshacerlos de forma controlada.
 - FastAPI no sustituye al ORM ni a las migraciones.
 - Lo normal es usar las tres piezas juntas: FastAPI + ORM + migraciones.
 
@@ -262,7 +262,7 @@ Piensa en el framework como la estructura de la casa, el ORM como el traductor e
 - En FastAPI pasa mucho cuando `main.py` importa `routers.py` y `routers.py` vuelve a importar `main.py`.
 - La solución suele ser mover el código compartido a otro módulo, retrasar imports hasta dentro de funciones o cambiar la dirección de las dependencias.
 
-Regla práctica: evita que routers, modelos y dependencias dependan del archivo principal de la app.
+Regla práctica: evita que routers, modelos y dependencias dependan del módulo principal de la app.
 
 ## 20. Reglas rápidas para recordar
 
