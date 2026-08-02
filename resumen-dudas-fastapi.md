@@ -96,6 +96,43 @@ cliente -> proxy/load balancer -> servidor ASGI -> FastAPI
 
 Es como un restaurante: el cliente pide, el camarero lleva el pedido a cocina, cocina prepara la comida, el camarero la trae de vuelta.
 
+### 6.1. Qué es un proxy
+
+- Un proxy es un intermediario entre el cliente y el servidor final.
+- El cliente no habla directamente con la app; primero le habla al proxy.
+- Puede ocultar la red interna, filtrar peticiones, guardar respuestas en caché, comprimir tráfico o terminar HTTPS.
+- Ejemplos comunes: Nginx, Traefik o Cloudflare.
+- Piensa en él como la recepción de un edificio: recibe a la gente, comprueba a dónde va y la redirige si hace falta.
+
+### 6.2. Qué es un balanceador
+
+- Un balanceador reparte peticiones entre varias copias de la misma aplicación.
+- Sirve para que una sola máquina no se sature y para que el servicio siga funcionando si una instancia falla.
+- Puede repartir el tráfico de varias formas: por turno, por carga o por conexiones activas.
+- Muchas veces el balanceador también actúa como proxy, así que en la práctica los dos papeles pueden ir juntos.
+- Piensa en él como una persona en la entrada de un cine con varias taquillas abiertas: va enviando a cada cliente a la ventanilla menos ocupada.
+
+### 6.3. Qué es un servidor ASGI
+
+- ASGI significa `Asynchronous Server Gateway Interface`.
+- Es el contrato que usan los servidores para hablar con aplicaciones Python asíncronas.
+- Un servidor ASGI escucha en un puerto, recibe la petición y se la entrega a la app.
+- Uvicorn, Hypercorn o Daphne son ejemplos de servidores ASGI.
+- FastAPI es la aplicación; el servidor ASGI es el programa que la ejecuta y la expone a la red.
+- Piensa en él como el mostrador que traduce el lenguaje de internet al lenguaje de tu aplicación.
+
+### 6.4. Qué es Middleware y en qué se diferencia de las dependencias
+
+- Middleware es código que envuelve la petición y la respuesta.
+- Se ejecuta antes de que la ruta haga su trabajo y otra vez después, cuando la respuesta ya está lista.
+- Sirve para tareas generales: logging, CORS, añadir cabeceras, medir tiempos, compresión o manejo de sesiones.
+- Las dependencias son funciones que una ruta pide explícitamente con `Depends(...)`.
+- Sirven para obtener cosas que necesita esa ruta: usuario actual, conexión a la base de datos, permisos o validación compartida.
+- La diferencia clave es la zona donde actúan: el middleware trabaja alrededor de casi todas las peticiones; la dependencia trabaja dentro de una ruta concreta o de las rutas que la declaran.
+- Otra diferencia importante es que una dependencia puede devolver un valor directamente a tu función; el middleware no suele hacerlo así, sino que actúa sobre la petición o la respuesta.
+- Usa middleware para lo transversal y dependencias para lo que necesita la lógica de una ruta.
+- Piensa en una oficina: el middleware sería la puerta y el pasillo común; las dependencias serían los ayudantes que llamas solo cuando los necesitas.
+
 ## 7. `fastapi dev` vs `fastapi run`
 
 - `fastapi dev` es para trabajar en desarrollo.
