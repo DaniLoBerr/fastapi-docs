@@ -23,7 +23,7 @@ async def read_lesson():
 
 
 """
-    DEPENDENCIAS
+    DEPENDENCIAS (Declaradas como funciones)
 
     - Las dependencias en FastAPI son funciones o recursos que otras
     funciones necesitar para funcionar.
@@ -37,8 +37,8 @@ async def read_lesson():
     2. Declarar la dependencia en la función que la necesita
     (the dependant), utilizando el decorador `Depends()`.
     3. Depends() solo recibe 1 único argumento y debe ser
-    algo como una función (y solo la declaración, no la llamada
-    a la función).
+    algo como una función (un "callable") y solo la declaración, no la llamada
+    a la función.
     4. Cuando la api reciba una petición, FastAPI ejecutará la
     función de dependencia con los parámetros correctos y pasará
     su resultado a la función que la necesita.
