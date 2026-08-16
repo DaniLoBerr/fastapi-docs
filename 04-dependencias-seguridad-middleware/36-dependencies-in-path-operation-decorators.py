@@ -13,7 +13,7 @@ router = APIRouter(
 
 
 @router.get("/")
-async def read_lesson():
+async def read_lesson():  # noqa
     return {
         "section": "Dependencias, seguridad básica y middleware",
         "lesson": "Dependencies in path operation decorators",
