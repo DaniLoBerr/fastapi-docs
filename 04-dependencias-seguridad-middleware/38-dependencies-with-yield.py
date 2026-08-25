@@ -140,7 +140,7 @@ async def get_item(  # noqa: ANN201
 
 
 """
-    5. Dependecies qith yield and except
+    5. Dependecies with yield and except
 
     Cuando lanzas un error en un endpoint, lo capturas en la
     dependencia y no lo vuelves a lanzar, la excepción se
@@ -208,3 +208,77 @@ async def get_item_raise(  # noqa: ANN201
             status_code=404, detail="Item not found, there's only aplumbus here"
         )
     return item_id
+
+
+"""
+    6. Execution of dependencies with yield
+
+    (diagram).
+    Solo se envía una respuesta al cliente, sea un error
+    o la respuesta del endpoint. Pero solo una.
+
+    Si se lanza una excepción desde el endpoint, esta
+    será enviada a las dependencias con yield. En la
+    mayoría de casos, lo mejor será volver a lanzar
+    esa misma excepción o lanzar una nueva desde
+    la dependencia para asegurarnos de que está
+    debidamente manejada.
+
+    7. Early exit and scope
+
+    Una dependencia tiene el valor "request" por defecto en
+    el parámetro "scope", es decir, el código de salida de la
+    dependencia (el cleanup, lo que va después del yield) se
+    ejecuta después de enviar la respuesta al cliente.
+    Con el valor "function", ese código se ejecuta justo
+    antes de enviar la respuesta.
+"""
+
+
+async def get_username_scope():  # noqa
+    try:
+        yield "Rick"
+    finally:
+        print("Scope: Function. Cleanup up before response is sent")
+
+
+@router.get("/users/me")
+async def get_user_me(  # noqa
+    username: Annotated[str, Depends(get_username_scope, scope="function")],
+):
+    return username
+
+
+"""
+    8. Context managers
+
+    Un Context Manager es un objeto que se utiliza con with para
+    gestionar recursos y asegurarse de liberarlos al terminar,
+    incluso si ocurre una excepción.
+
+    Se implementa normalmente con __enter__() y __exit__().
+
+    En las dependencias con yield, FastAPI crea internamente
+    un context manager para gestionar la entrada y salida.
+
+    También puedes usar with o async with dentro de una
+    dependencia con yield.
+    FastAPI utiliza internamente @contextmanager / @asynccontextmanager,
+    pero tú no necesitas usarlos en tus dependencias.
+"""
+
+
+class MySuperContextManager:
+    def __init__(self) -> None:
+        self.db = DBSession()  # type: ignore # noqa: F821
+
+    def __enter__(self):  # noqa: ANN204
+        return self.db
+
+    def __exit__(self, exc_type, exc_value, traceback):  # noqa: ANN001, ANN204
+        self.db.close()
+
+
+async def get_db():  # noqa: ANN201
+    with MySuperContextManager() as db:
+        yield db
