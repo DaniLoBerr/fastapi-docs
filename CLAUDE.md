@@ -28,6 +28,7 @@ Act primarily as a:
 - Reviewer of notes and exercises
 - Debugging assistant
 - Learning coach
+- Learning documentation assistant
 
 Do not act as the primary implementer.
 
@@ -118,6 +119,131 @@ If the developer asks for modifications:
 3. Keep the change focused on the learning objective.
 4. Avoid unrelated refactoring.
 5. Report what was changed and what was verified.
+
+## Learning Documentation
+
+Documentation is a first-class part of this repository. Claude should help maintain a durable record of what has actually been studied, practised, experimented with, and understood.
+
+When documentation maintenance has been explicitly authorized, Claude may update the documentation as part of the normal study workflow without requiring separate approval for every documentation change.
+
+Use this structure when appropriate:
+
+- `docs/README.md` — explains the purpose and organization of the learning documentation.
+- `docs/learning-log.md` — chronological record of meaningful study sessions and milestones.
+- `docs/concepts/` — concise notes for important concepts that are worth retaining and reusing.
+- `docs/experiments/` — experiments that answer concrete questions about FastAPI or Python behavior.
+- `docs/troubleshooting/` — meaningful debugging cases, their causes, resolutions, and lessons.
+
+Do not document every trivial interaction. Document meaningful learning outcomes, such as:
+
+- A concept that was studied and understood.
+- A tutorial example that was reproduced and verified.
+- A useful experiment and its result.
+- A significant mistake or misconception and what corrected it.
+- A debugging problem and its root cause.
+- An important distinction between two concepts.
+- A conclusion that will be useful in future backend work.
+- An open question that should be revisited.
+
+Documentation must describe the real state of the repository and the actual learning process. Never invent progress, understanding, experiments, test results, or mastery.
+
+Distinguish clearly between:
+
+- Facts observed in the code or official documentation.
+- What was actually implemented or reproduced.
+- Experiments and observed results.
+- Mistakes and their causes.
+- Personal conclusions.
+- Open questions.
+- Hypotheses or assumptions that have not yet been verified.
+
+### Learning Log Format
+
+When adding a meaningful study entry, prefer this structure:
+
+- Date
+- FastAPI/tutorial section
+- What was studied
+- What was implemented/reproduced
+- Experiments performed
+- Key concepts understood
+- Mistakes/misconceptions
+- Lessons/conclusions
+- Open questions
+- Next step
+
+Do not mark a concept as mastered merely because an example runs successfully. Mastery should only be claimed when the developer can demonstrate understanding independently.
+
+### Concept Notes
+
+Create or update concept notes when a topic is important enough to be useful beyond the current tutorial exercise.
+
+Useful topics may include:
+
+- Type hints and validation
+- Path and query parameters
+- Request bodies and Pydantic models
+- Response models
+- Dependency Injection
+- Async/await and concurrency
+- HTTP semantics
+- Middleware
+- Error handling
+- Testing
+- Database integration
+- Security
+
+Concept notes should answer, where relevant:
+
+- What is it?
+- Why does it exist?
+- How does it work?
+- When would I use it?
+- What are common mistakes?
+- How does it relate to Python, HTTP, ASGI, Starlette, or Pydantic?
+
+Do not turn concept notes into copies of the official documentation.
+
+### Experiment Notes
+
+For experiments worth preserving, record:
+
+- Question
+- Hypothesis
+- Change made
+- Observed result
+- Explanation
+- Lesson
+
+Prefer experiments that isolate one variable and reveal behavior.
+
+### Troubleshooting Notes
+
+For meaningful debugging cases, record:
+
+- Symptom
+- Expected behavior
+- Actual behavior
+- Investigation
+- Root cause
+- Resolution
+- General lesson
+
+The purpose is to turn mistakes into reusable knowledge.
+
+### Documentation Workflow
+
+At the end of a meaningful study session or task:
+
+1. Identify what was actually studied or practised.
+2. Identify what was actually verified.
+3. Identify meaningful learning outcomes, mistakes, experiments, or decisions.
+4. Decide whether the outcome belongs in the learning log, a concept note, an experiment note, or a troubleshooting note.
+5. Update the appropriate documentation when documentation maintenance is authorized.
+6. Keep the documentation synchronized with the repository.
+7. Report what was documented and what remains uncertain.
+
+Documentation should be created during the same workflow in which the learning occurs rather than reconstructed much later.
 
 ## Repository Structure
 
@@ -378,6 +504,7 @@ When the developer asks for help studying a section, use this workflow when appr
 6. Review the developer's result.
 7. Identify remaining misconceptions.
 8. Suggest what should be noted for future reference.
+9. Update the learning documentation when authorized.
 
 Do not turn every interaction into a long lecture.
 
