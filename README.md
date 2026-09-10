@@ -3,7 +3,7 @@
 Working through the **entire official FastAPI documentation** as one coherent application instead of scattered practice scripts. Every page of the docs gets its own lesson file, its own router, and its own notes.
 
 ![Status](https://img.shields.io/badge/status-in%20progress-brightgreen)
-![Python](https://img.shields.io/badge/python-3.12-blue)
+![Python](https://img.shields.io/badge/python-3.14-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-latest-009688)
 ![Ruff](https://img.shields.io/badge/linting-ruff%20strict-orange)
 
