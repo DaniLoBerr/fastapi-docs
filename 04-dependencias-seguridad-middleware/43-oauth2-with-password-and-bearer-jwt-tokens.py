@@ -3,6 +3,8 @@ https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
 """
 
 from fastapi import APIRouter
+from pwdlib import PasswordHash
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/dependencies-security-middleware/oauth2-with-password-and-bearer-jwt-tokens",
@@ -56,4 +58,69 @@ async def read_lesson():  # noqa
     Para manejar hashes de contraseñas en Python se puede utilizar la librería
     pwdlib. Además, esta librería hace que se puedan compartir datos entre
     aplicaciones escritas en FastAPI, Django o Flask.
+
+
+    HASH AND VERIFY PASSWORDS
+
+    pwdlib.PasswordHash.recommended() es un método de clase que devuelve
+    una instancia ya configurada con el algoritmo de hashing recomendado
+    por la librería Argon2 y sus parámetros de coste seguros, y que
+    utilizaremos para hashear y verificar contraseñas.
+    Para trabajar con sistemas más antiguos, es recomendado passlib. Pero
+    se lo que se puede hacer es leer y verificar hashes antiguos con passlib
+    y generar nuevos con pwdlib.
+    Para evitar un ataque de temporización, lo que se hace es, cuando el
+    usuario no existe, se verifica igualmente contra un hash de mentira
+    (DUMMY_HASH) para gastar el mismo tiempo que si si existeiese.
 """
+
+
+fake_users_db = {
+    "johndoe": {
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "johndoe@example.com",
+        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$wagCPXjifgvUFBzq4hqe3w$CYaIb8sB+wtD+Vu/P4uod1+Qof8h+1g7bbDlBID48Rc",
+        "disabled": False,
+    }
+}
+
+
+password_hash = PasswordHash.recommended()
+DUMMY_HASH = password_hash.hash("dummypassword")
+
+
+class User(BaseModel):
+    username: str
+    email: str | None = None
+    full_name: str | None = None
+    disabled: bool | None = None
+
+
+class UserInDB(User):
+    hashed_password: str
+
+
+# Create a utility function to hash a password coming from the user.
+def get_password_hash(password: str) -> str:
+    return password_hash.hash(password)
+
+
+# And another utility to verify if a received password matches the hash stored.
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return password_hash.verify(plain_password, hashed_password)
+
+
+# And another one to authenticate and return a user.
+def get_user(db: dict, username: str) -> UserInDB:
+    return UserInDB(**db[username]) if username in db else None
+
+
+def authenticate_user(db: dict, username: str, password: str) -> User | bool:
+    user = get_user(db, username)
+    if not user:
+        verify_password(password, DUMMY_HASH)
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
