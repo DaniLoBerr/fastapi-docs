@@ -72,6 +72,34 @@ async def read_lesson():  # noqa
     Para evitar un ataque de temporización, lo que se hace es, cuando el
     usuario no existe, se verifica igualmente contra un hash de mentira
     (DUMMY_HASH) para gastar el mismo tiempo que si si existeiese.
+
+
+    HANDLE JWT TOKENS
+
+    Antes de nada, mencionar que la SECRET_KEY no se puede guardar en el
+    código porque hace que quien la tenga pueda emitir tokens válidos.
+    Normalmente se guarda en un archivo .env (variables de entorno).
+    Aquí lo dejamos en el código porque es una lección meramente
+    educativa. En un proyecto real quedaría así:
+
+
+        from pydantic_settings import BaseSettings
+
+
+        class Settings(BaseSettings):
+            secret_key: str
+            algorithm: str = "HS256"
+            access_token_expire_minutes: int = 30
+
+            model_config = {"env_file": ".env"}
+
+
+        settings = Settings()
+
+
+    Si cambiáramos la SECRET_KEY, automáticamente todos los tokens
+    emitidos antes dejan de validar de golpe porque sus firmas
+    ya no se pueden reproducir.
 """
 
 
@@ -88,6 +116,9 @@ fake_users_db = {
 
 password_hash = PasswordHash.recommended()
 DUMMY_HASH = password_hash.hash("dummypassword")
+SECRET_KEY = "e79f07760e3ff8b1ded65074a75689f9e8740c0414aba91ad87faa2584189e45"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 class User(BaseModel):
