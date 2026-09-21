@@ -76,8 +76,10 @@ async def read_lesson():  # noqa
 
     HANDLE JWT TOKENS
 
-    Antes de nada, mencionar que la SECRET_KEY no se puede guardar en el
-    código porque hace que quien la tenga pueda emitir tokens válidos.
+    Para firmar un token JWT, se necesita una secret key. Para generar una secret
+    key aleatoria y segura, se puede hacer con openssl rand -hex 32.
+    Esta SECRET_KEY no se puede guardar en el código porque hace que quien
+    la tenga pueda emitir tokens válidos.
     Normalmente se guarda en un archivo .env (variables de entorno).
     Aquí lo dejamos en el código porque es una lección meramente
     educativa. En un proyecto real quedaría así:
@@ -100,6 +102,13 @@ async def read_lesson():  # noqa
     Si cambiáramos la SECRET_KEY, automáticamente todos los tokens
     emitidos antes dejan de validar de golpe porque sus firmas
     ya no se pueden reproducir.
+
+    Con el modelo pydantic Token se estructura la respuesta del endpoint
+    que genera los tokens, cumpliendo conel estándar OAuth2. Lo usa FastAPI
+    y genera la documentación de Swagger.
+    Con el modelo TokenData se define la estructura de los datos que
+    esperamos recibir en el payload del token decodificado, que en este
+    caso es únicamente el username. Lo usamos nosotros y no aparece en Swagger.
 """
 
 
@@ -119,6 +128,15 @@ DUMMY_HASH = password_hash.hash("dummypassword")
 SECRET_KEY = "e79f07760e3ff8b1ded65074a75689f9e8740c0414aba91ad87faa2584189e45"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
 
 
 class User(BaseModel):
