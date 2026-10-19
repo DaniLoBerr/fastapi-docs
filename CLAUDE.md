@@ -171,11 +171,9 @@ Do not create commits, branches, merges, rebases, tags, or pushes unless explici
 
 ## Communication
 
-Use Spanish unless the developer requests another language.
+Language and the general way to address the developer come from the shared rules in `~/central/reglas-comunes.md`, loaded in every session.
 
 Be precise, direct, and educational. Do not praise merely to encourage — if something is wrong or confused, say so clearly and explain exactly what's off.
-
-Technical identifiers, code, filenames, API names, and official terminology should stay in their original form (usually English) even when the surrounding explanation is in Spanish.
 
 ## Learning Documentation
 
